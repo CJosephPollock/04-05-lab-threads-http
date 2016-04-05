@@ -23,56 +23,69 @@ public class MovieDownloader {
 		//construct the url for the omdbapi API
 		String urlString = "";
 		try {
-			urlString = "http://www.omdbapi.com/?s=" + URLEncoder.encode(movie, "UTF-8") + "&type=movie";
+			// Takes the name of the movie we entered, puts it in the URL, however if that doesn't work, 
+			// this try/catch will "catch" it and return null for the method.
+			urlString = "http://www.omdbapi.com/?s=" + URLEncoder.encode(movie, "UTF-8") + "&type=movie"; 
 		}catch(UnsupportedEncodingException uee){
 			return null;
 		}
 
+		//Creating our objects
 		HttpURLConnection urlConnection = null;
 		BufferedReader reader = null;
 
+		//Creating the array that will eventually be returned (hopefully)
 		String movies[] = null;
 
-		try {
 
-			URL url = new URL(urlString);
+		try { //Tries to do the actions in this block.  If ANY of them fail, we move to the catch.
 
-			urlConnection = (HttpURLConnection) url.openConnection();
-			urlConnection.setRequestMethod("GET");
-			urlConnection.connect();
+			URL url = new URL(urlString); //Creating our URL object with our custom movie URL. 
 
-			InputStream inputStream = urlConnection.getInputStream();
-			StringBuffer buffer = new StringBuffer();
-			if (inputStream == null) {
+			urlConnection = (HttpURLConnection) url.openConnection(); //Creates the connection. 
+			urlConnection.setRequestMethod("GET"); //Tells the connection we plan to send a get request
+			urlConnection.connect(); //Connects to the web server.
+
+			InputStream inputStream = urlConnection.getInputStream(); //Returns an input stream reading from the current connection.
+			StringBuffer buffer = new StringBuffer(); //Creates a new StringBuffer object
+			if (inputStream == null) { //If the inputStream is null (aka nothing came from the website), return Null
 				return null;
 			}
+			//...otherwise, initialize a BufferReader with this input stream.
 			reader = new BufferedReader(new InputStreamReader(inputStream));
 
-			String line = reader.readLine();
-			while (line != null) {
-				buffer.append(line + "\n");
-				line = reader.readLine();
+			//Then, we are going to read each line in that BufferedReader
+			String line = reader.readLine(); 
+			while (line != null) { //It will continue reading until it reaches a line that is NULL (end of file hopefully)
+				buffer.append(line + "\n"); //Adding a line break to the end of each line
+				line = reader.readLine(); //
 			}
 
-			if (buffer.length() == 0) {
+			if (buffer.length() == 0) { //AKA if nothing was returned from the webpage, return null
 				return null;
 			}
+
+			//We are turning this buffer (with each line and added line breaks) into a string and modifying it
+			//by replacing some characters
 			String results = buffer.toString();
 			results = results.replace("{\"Search\":[","");
 			results = results.replace("]}","");
 			results = results.replace("},", "},\n");
 
+			//Once we cleaned up our data, we are going to split it based on new lines
+			//the output of which will be an array.  
 			movies = results.split("\n");
 		} 
+		//Catches any errors that may arise.
 		catch (IOException e) {
 			return null;
 		} 
-		finally {
-			if (urlConnection != null) {
+		finally { //After the try and catch are done executing, we need to "clean up"
+			if (urlConnection != null) { //If the connection was valid, we want to close it by disconnecting
 				urlConnection.disconnect();
 			}
-			if (reader != null) {
-				try {
+			if (reader != null) { //Similarly, we want to close the reader
+				try { //It will try to close the reader, and if there are any problems, we will catch them. 
 					reader.close();
 				} 
 				catch (IOException e) {
@@ -80,6 +93,7 @@ public class MovieDownloader {
 			}
 		}
 
+		//Return our array of movies!
 		return movies;
 	}
 
